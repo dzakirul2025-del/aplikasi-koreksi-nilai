@@ -1,0 +1,6 @@
+{
+  "name": "KoreksiLembar",
+  "description": "Prototipe aplikasi koreksi nilai lembar jawaban manual untuk pilihan ganda dan uraian, lengkap dengan kunci jawaban, input ketik cepat, rekap nilai, analisis butir soal, dan cetak LJK.",
+  "requestFramePermissions": [],
+  "majorCapabilities": []
+}
