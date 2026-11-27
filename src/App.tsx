@@ -8,6 +8,10 @@ import {
 import { GradebookLedger } from './components/GradebookLedger';
 import { ItemAnalysisAndPrint } from './components/ItemAnalysisAndPrint';
 import { ManualGradingWorkspace } from './components/ManualGradingWorkspace';
+import {
+  StudentEditModal,
+  StudentProfileDraft,
+} from './components/StudentEditModal';
 import { SubjectSwitcherBar } from './components/SubjectSwitcherBar';
 import {
   ActiveTab,
@@ -53,6 +57,8 @@ export default function App() {
     loadMultiSubjectStore()
   );
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [editingStudent, setEditingStudent] =
+    useState<StudentProfileDraft | null>(null);
 
   const [activeSheetId, setActiveSheetId] = useState<string | null>(() => {
     const initial = loadMultiSubjectStore().matematika.sheets;
@@ -308,6 +314,48 @@ export default function App() {
     setActiveTab('koreksi');
   };
 
+  const handleOpenEditStudentProfile = (id: string) => {
+    const found =
+      sheets.find((s) => s.id === id) ??
+      SUBJECT_LIST.map((subj) =>
+        store[subj.id].sheets.find((s) => s.id === id)
+      ).find(Boolean);
+
+    if (!found) return;
+    setEditingStudent({
+      id: found.id,
+      nis: found.nis,
+      name: found.name,
+      className: found.className || config.className,
+      packageCode: found.packageCode || 'A',
+    });
+  };
+
+  const handleSaveStudentProfile = (updated: StudentProfileDraft) => {
+    setStore((prev) => {
+      const nextStore = { ...prev };
+      SUBJECT_LIST.forEach((subj) => {
+        const st = prev[subj.id];
+        nextStore[subj.id] = {
+          ...st,
+          sheets: st.sheets.map((s) =>
+            s.id === updated.id
+              ? {
+                  ...s,
+                  nis: updated.nis,
+                  name: updated.name,
+                  className: updated.className,
+                  packageCode: updated.packageCode,
+                }
+              : s
+          ),
+        };
+      });
+      return nextStore;
+    });
+    setNotice(`Data siswa ${updated.name} berhasil diperbarui di seluruh mata pelajaran.`);
+  };
+
   const handleDeleteStudent = (id: string) => {
     setStore((prev) => {
       const nextStore = { ...prev };
@@ -464,6 +512,8 @@ export default function App() {
             onSelectSheet={(id) => setActiveSheetId(id)}
             onCreateNewSheet={handleCreateNewSheet}
             onSaveSheet={handleSaveSheet}
+            onEditStudentProfile={handleOpenEditStudentProfile}
+            onDeleteStudent={handleDeleteStudent}
             onOpenImportExcel={() => setIsImportModalOpen(true)}
           />
         )}
@@ -484,6 +534,7 @@ export default function App() {
             sheets={sheets}
             onSelectSubject={handleSelectSubject}
             onEditStudent={handleEditFromLedger}
+            onEditStudentProfile={handleOpenEditStudentProfile}
             onDeleteStudent={handleDeleteStudent}
             onAddNewStudent={handleCreateNewSheet}
             onOpenImportExcel={() => setIsImportModalOpen(true)}
@@ -502,6 +553,15 @@ export default function App() {
         existingSheets={sheets}
         onClose={() => setIsImportModalOpen(false)}
         onConfirmImport={handleConfirmExcelImport}
+      />
+
+      {/* Student Profile Edit & Delete Modal */}
+      <StudentEditModal
+        student={editingStudent}
+        enableMultiPackage={config.enableMultiPackage}
+        onClose={() => setEditingStudent(null)}
+        onSave={handleSaveStudentProfile}
+        onDelete={handleDeleteStudent}
       />
 
       {/* Quiet Footer */}

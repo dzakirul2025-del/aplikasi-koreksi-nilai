@@ -9,10 +9,12 @@ import {
   Keyboard,
   Minus,
   MousePointerClick,
+  PencilLine,
   Plus,
   Redo2,
   RotateCcw,
   Terminal,
+  Trash2,
   Undo2,
   UserPlus,
   Volume2,
@@ -44,6 +46,8 @@ interface ManualGradingWorkspaceProps {
   onSelectSheet: (id: string) => void;
   onCreateNewSheet: () => void;
   onSaveSheet: (sheet: StudentSheet, advanceToNext: boolean) => void;
+  onEditStudentProfile: (id: string) => void;
+  onDeleteStudent: (id: string) => void;
   onOpenImportExcel: () => void;
 }
 
@@ -61,6 +65,8 @@ export const ManualGradingWorkspace: React.FC<ManualGradingWorkspaceProps> = ({
   onSelectSheet,
   onCreateNewSheet,
   onSaveSheet,
+  onEditStudentProfile,
+  onDeleteStudent,
   onOpenImportExcel,
 }) => {
   const activeSheet = useMemo(
@@ -82,6 +88,7 @@ export const ManualGradingWorkspace: React.FC<ManualGradingWorkspaceProps> = ({
   const [showKeyComparison, setShowKeyComparison] = useState<boolean>(true);
   const [soundEnabled, setSoundEnabled] = useState<boolean>(false);
   const [validationError, setValidationError] = useState<string | null>(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   // Undo / Redo stacks for current sheet edits
   const [undoStack, setUndoStack] = useState<DraftSnapshot[]>([]);
@@ -1065,17 +1072,20 @@ export const ManualGradingWorkspace: React.FC<ManualGradingWorkspaceProps> = ({
                 const isSelected = stu.id === activeSheetId;
                 const isGraded = stu.gradedAt !== null;
                 const res = isGraded ? gradeStudentSheet(stu, config) : null;
+                const isConfirming = confirmDeleteId === stu.id;
 
                 return (
-                  <button
+                  <div
                     key={stu.id}
-                    type="button"
-                    onClick={() => onSelectSheet(stu.id)}
-                    className={`w-full flex items-center justify-between gap-3 px-5 py-2.5 text-left transition-colors cursor-pointer ${
+                    className={`flex items-center justify-between gap-2 px-4 py-2.5 transition-colors ${
                       isSelected ? 'bg-[#1D4ED8]/8' : 'hover:bg-slate-50'
                     }`}
                   >
-                    <div className="min-w-0">
+                    <button
+                      type="button"
+                      onClick={() => onSelectSheet(stu.id)}
+                      className="flex-1 min-w-0 text-left cursor-pointer"
+                    >
                       <div
                         className={`text-sm truncate ${
                           isSelected
@@ -1087,31 +1097,88 @@ export const ManualGradingWorkspace: React.FC<ManualGradingWorkspaceProps> = ({
                       </div>
                       <div className="text-xs font-mono text-slate-400 tabular-nums">
                         {stu.nis}
-                        {config.enableMultiPackage && ` · Paket ${stu.packageCode || 'A'}`}
+                        {config.enableMultiPackage &&
+                          ` · Paket ${stu.packageCode || 'A'}`}
                       </div>
-                    </div>
+                    </button>
 
-                    <div className="text-right shrink-0">
-                      {res ? (
-                        <>
-                          <div className="font-mono text-sm font-semibold text-slate-900 tabular-nums">
-                            {config.roundingMode === 'decimal1'
-                              ? res.finalScore.toFixed(1)
-                              : res.finalScore.toFixed(0)}
-                          </div>
-                          <div
-                            className={`text-xs font-medium ${
-                              res.passed ? 'text-[#059669]' : 'text-[#DC2626]'
-                            }`}
+                    {isConfirming ? (
+                      <div className="flex items-center gap-2 shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            onDeleteStudent(stu.id);
+                            setConfirmDeleteId(null);
+                          }}
+                          className="text-xs font-semibold text-[#DC2626] hover:underline cursor-pointer"
+                        >
+                          Hapus
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setConfirmDeleteId(null)}
+                          className="text-xs text-slate-500 hover:underline cursor-pointer"
+                        >
+                          Batal
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2.5 shrink-0">
+                        <div className="text-right">
+                          {res ? (
+                            <>
+                              <div className="font-mono text-sm font-semibold text-slate-900 tabular-nums">
+                                {config.roundingMode === 'decimal1'
+                                  ? res.finalScore.toFixed(1)
+                                  : res.finalScore.toFixed(0)}
+                              </div>
+                              <div
+                                className={`text-[11px] font-medium ${
+                                  res.passed
+                                    ? 'text-[#059669]'
+                                    : 'text-[#DC2626]'
+                                }`}
+                              >
+                                {res.predicate} ·{' '}
+                                {res.passed ? 'Tuntas' : 'Remedial'}
+                              </div>
+                            </>
+                          ) : (
+                            <span className="text-xs text-slate-400">
+                              Menunggu
+                            </span>
+                          )}
+                        </div>
+
+                        <div className="flex items-center gap-1 border-l border-slate-200 pl-2">
+                          <button
+                            type="button"
+                            onClick={() => onEditStudentProfile(stu.id)}
+                            title={`Edit data ${stu.name}`}
+                            aria-label={`Edit data ${stu.name}`}
+                            className="h-7 w-7 inline-flex items-center justify-center rounded text-slate-400 hover:text-[#1D4ED8] hover:bg-slate-100 cursor-pointer"
                           >
-                            {res.predicate} · {res.passed ? 'Tuntas' : 'Remedial'}
-                          </div>
-                        </>
-                      ) : (
-                        <span className="text-xs text-slate-400">Menunggu</span>
-                      )}
-                    </div>
-                  </button>
+                            <PencilLine
+                              className="h-3.5 w-3.5"
+                              aria-hidden="true"
+                            />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setConfirmDeleteId(stu.id)}
+                            title={`Hapus ${stu.name}`}
+                            aria-label={`Hapus ${stu.name}`}
+                            className="h-7 w-7 inline-flex items-center justify-center rounded text-slate-400 hover:text-[#DC2626] hover:bg-red-50 cursor-pointer"
+                          >
+                            <Trash2
+                              className="h-3.5 w-3.5"
+                              aria-hidden="true"
+                            />
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 );
               })}
             </div>

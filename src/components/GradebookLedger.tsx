@@ -43,6 +43,7 @@ interface GradebookLedgerProps {
   sheets: StudentSheet[];
   onSelectSubject: (id: SubjectId) => void;
   onEditStudent: (id: string, subjectId?: SubjectId) => void;
+  onEditStudentProfile: (id: string) => void;
   onDeleteStudent: (id: string) => void;
   onAddNewStudent: () => void;
   onOpenImportExcel: () => void;
@@ -60,6 +61,7 @@ export const GradebookLedger: React.FC<GradebookLedgerProps> = ({
   sheets,
   onSelectSubject,
   onEditStudent,
+  onEditStudentProfile,
   onDeleteStudent,
   onAddNewStudent,
   onOpenImportExcel,
@@ -552,8 +554,11 @@ export const GradebookLedger: React.FC<GradebookLedgerProps> = ({
                       <th className="py-3 px-3 text-right whitespace-nowrap">
                         Rata-rata
                       </th>
-                      <th className="py-3 pl-3 pr-5 whitespace-nowrap">
+                      <th className="py-3 px-3 whitespace-nowrap">
                         Status Leger
+                      </th>
+                      <th className="py-3 pl-3 pr-5 text-right whitespace-nowrap">
+                        Aksi
                       </th>
                     </tr>
                   </thead>
@@ -627,7 +632,7 @@ export const GradebookLedger: React.FC<GradebookLedgerProps> = ({
                             ? row.averageScore.toFixed(1)
                             : '—'}
                         </td>
-                        <td className="py-3 pl-3 pr-5 whitespace-nowrap">
+                        <td className="py-3 px-3 whitespace-nowrap">
                           {row.overallStatus === 'tuntas-semua' ? (
                             <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#059669]">
                               <CheckCircle2
@@ -655,6 +660,58 @@ export const GradebookLedger: React.FC<GradebookLedgerProps> = ({
                                 mapel
                               </span>
                             </span>
+                          )}
+                        </td>
+                        <td className="py-3 pl-3 pr-5 text-right whitespace-nowrap">
+                          {confirmDeleteId === row.studentId ? (
+                            <div className="inline-flex items-center gap-2">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  onDeleteStudent(row.studentId);
+                                  setConfirmDeleteId(null);
+                                }}
+                                className="text-xs font-semibold text-[#DC2626] hover:underline cursor-pointer"
+                              >
+                                Ya, Hapus
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setConfirmDeleteId(null)}
+                                className="text-xs text-slate-500 hover:underline cursor-pointer"
+                              >
+                                Batal
+                              </button>
+                            </div>
+                          ) : (
+                            <div className="inline-flex items-center gap-3">
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  onEditStudentProfile(row.studentId)
+                                }
+                                className="inline-flex items-center gap-1 text-xs font-medium text-[#1D4ED8] hover:underline cursor-pointer"
+                              >
+                                <PencilLine
+                                  className="h-3.5 w-3.5"
+                                  aria-hidden="true"
+                                />
+                                <span>Edit</span>
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setConfirmDeleteId(row.studentId)
+                                }
+                                className="inline-flex items-center gap-1 text-xs font-medium text-[#DC2626] hover:underline cursor-pointer"
+                              >
+                                <Trash2
+                                  className="h-3.5 w-3.5"
+                                  aria-hidden="true"
+                                />
+                                <span>Hapus</span>
+                              </button>
+                            </div>
                           )}
                         </td>
                       </tr>
@@ -963,24 +1020,31 @@ export const GradebookLedger: React.FC<GradebookLedgerProps> = ({
                               <button
                                 type="button"
                                 onClick={() => onEditStudent(sheet.id)}
+                                className="text-xs font-medium text-slate-700 hover:text-[#1D4ED8] hover:underline cursor-pointer"
+                              >
+                                {isGraded ? 'Nilai' : 'Koreksi'}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => onEditStudentProfile(sheet.id)}
                                 className="inline-flex items-center gap-1 text-xs font-medium text-[#1D4ED8] hover:underline cursor-pointer"
                               >
                                 <PencilLine
                                   className="h-3.5 w-3.5"
                                   aria-hidden="true"
                                 />
-                                <span>{isGraded ? 'Edit' : 'Koreksi'}</span>
+                                <span>Edit</span>
                               </button>
                               <button
                                 type="button"
                                 onClick={() => setConfirmDeleteId(sheet.id)}
-                                aria-label={`Hapus data ${sheet.name}`}
-                                className="text-slate-400 hover:text-[#DC2626] transition-colors cursor-pointer"
+                                className="inline-flex items-center gap-1 text-xs font-medium text-[#DC2626] hover:underline cursor-pointer"
                               >
                                 <Trash2
                                   className="h-3.5 w-3.5"
                                   aria-hidden="true"
                                 />
+                                <span>Hapus</span>
                               </button>
                             </div>
                           )}
